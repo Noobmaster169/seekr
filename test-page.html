@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquid Glass Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+        }
+        .instructions {
+            background: #f0f9ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .test-item {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f8f8;
+            border-radius: 8px;
+        }
+        kbd {
+            background: #333;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>🌊 Liquid Glass Extension Test Page</h1>
+        
+        <div class="instructions">
+            <h3>Testing Instructions:</h3>
+            <ol>
+                <li><strong>Reload the extension</strong> in chrome://extensions/</li>
+                <li><strong>Refresh this page</strong> (F5 or Ctrl+R)</li>
+                <li><strong>Open DevTools</strong> (F12) and check Console for messages</li>
+                <li><strong>Look for</strong>:
+                    <ul>
+                        <li>"🌊 Liquid Glass overlay loading..."</li>
+                        <li>"✨ Liquid Glass overlay loaded!"</li>
+                    </ul>
+                </li>
+                <li><strong>Check</strong> if a transparent glassmorphism overlay appears on this page</li>
+                <li><strong>Try</strong> pressing <kbd>Alt + L</kbd> to toggle the overlay</li>
+                <li><strong>Try</strong> clicking the extension icon and then "Toggle Overlay"</li>
+            </ol>
+        </div>
+
+        <div class="test-item">
+            <h3>What you should see:</h3>
+            <ul>
+                <li>✅ A transparent floating panel with "Liquid Glass" title</li>
+                <li>✅ The panel should be draggable</li>
+                <li>✅ You should see the page content through it (glassmorphism effect)</li>
+                <li>✅ The panel has minimize and hide buttons</li>
+            </ul>
+        </div>
+
+        <div class="test-item">
+            <h3>Debug Checklist:</h3>
+            <ul>
+                <li>Open DevTools Console (F12)</li>
+                <li>Check for any error messages (red text)</li>
+                <li>Look for "liquid-glass-overlay-root" element in Elements tab</li>
+                <li>Check if assets/overlay.js and assets/style.css loaded successfully in Network tab</li>
+            </ul>
+        </div>
+
+        <h2>Sample Content</h2>
+        <p>This is some test content to see through the glassmorphism overlay. The overlay should be semi-transparent, allowing you to read this text while still showing the beautiful glass effect.</p>
+        
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+
+        <h3>More Content</h3>
+        <p>The overlay should float above this content with a beautiful blur effect and gradient colors (purple, blue, indigo). You should be able to drag it around the page!</p>
+    </div>
+
+    <script>
+        console.log('Test page loaded - waiting for Liquid Glass overlay...');
+        
+        // Check if overlay is injected after 2 seconds
+        setTimeout(() => {
+            const overlay = document.getElementById('liquid-glass-overlay-root');
+            if (overlay) {
+                console.log('✅ Overlay container found!', overlay);
+            } else {
+                console.error('❌ Overlay container NOT found! Check extension is loaded.');
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

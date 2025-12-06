@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Icon Generator</title>
+</head>
+<body>
+  <h1>Icon Generator for Liquid Glass Extension</h1>
+  <p>This page helps generate PNG icons from the SVG</p>
+  
+  <canvas id="canvas16" width="16" height="16"></canvas>
+  <canvas id="canvas48" width="48" height="48"></canvas>
+  <canvas id="canvas128" width="128" height="128"></canvas>
+  
+  <br><br>
+  <button onclick="generateIcons()">Generate Icons</button>
+  <div id="downloads"></div>
+
+  <script>
+    async function generateIcons() {
+      const svgContent = `
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a8e6ff;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.6" />
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="60" fill="url(#grad1)"/>
+  <circle cx="64" cy="64" r="48" fill="url(#grad2)" opacity="0.3"/>
+  <circle cx="64" cy="64" r="36" fill="url(#grad2)" opacity="0.4"/>
+  <circle cx="64" cy="64" r="24" fill="url(#grad2)" opacity="0.5"/>
+  <path d="M64 30 L68 50 L88 54 L68 58 L64 78 L60 58 L40 54 L60 50 Z" fill="white" opacity="0.9"/>
+  <circle cx="45" cy="45" r="3" fill="white" opacity="0.8"/>
+  <circle cx="83" cy="45" r="3" fill="white" opacity="0.8"/>
+  <circle cx="83" cy="83" r="3" fill="white" opacity="0.8"/>
+  <circle cx="45" cy="83" r="3" fill="white" opacity="0.8"/>
+  <circle cx="80" cy="48" r="8" fill="white" opacity="0.3"/>
+</svg>
+      `
+      
+      const sizes = [16, 48, 128]
+      const downloads = document.getElementById('downloads')
+      downloads.innerHTML = ''
+      
+      for (const size of sizes) {
+        const canvas = document.getElementById(`canvas${size}`)
+        const ctx = canvas.getContext('2d')
+        
+        const img = new Image()
+        const blob = new Blob([svgContent], { type: 'image/svg+xml' })
+        const url = URL.createObjectURL(blob)
+        
+        await new Promise((resolve) => {
+          img.onload = () => {
+            ctx.drawImage(img, 0, 0, size, size)
+            canvas.toBlob((blob) => {
+              const link = document.createElement('a')
+              link.download = `icon${size}.png`
+              link.href = URL.createObjectURL(blob)
+              link.textContent = `Download icon${size}.png`
+              link.style.display = 'block'
+              link.style.margin = '10px'
+              downloads.appendChild(link)
+              resolve()
+            })
+          }
+          img.src = url
+        })
+        
+        URL.revokeObjectURL(url)
+      }
+      
+      alert('Icons generated! Click the links to download them to the public/ folder')
+    }
+  </script>
+</body>
+</html>
