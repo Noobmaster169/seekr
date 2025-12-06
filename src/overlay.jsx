@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import SimpleOverlay from './SimpleOverlay.jsx'
+import OverlayApp from './OverlayApp.jsx'
 import './index.css'
 
 // Make React available globally for the bundle
@@ -48,7 +48,7 @@ const initOverlay = () => {
     
     root.render(
       <React.StrictMode>
-        <SimpleOverlay />
+        <OverlayApp />
       </React.StrictMode>
     )
     console.log('✨ Overlay rendered!')

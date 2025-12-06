@@ -15,19 +15,7 @@ if (isRestrictedPage) {
   // Function to inject overlay with error handling
   function injectOverlay() {
     try {
-      // Inject the CSS first
-      const styleLink = document.createElement('link')
-      styleLink.rel = 'stylesheet'
-      styleLink.href = chrome.runtime.getURL('assets/style.css')
-      styleLink.onerror = () => {
-        console.error('❌ Failed to load Liquid Glass CSS')
-      }
-      styleLink.onload = () => {
-        console.log('✅ Liquid Glass CSS loaded')
-      }
-      document.head.appendChild(styleLink)
-
-      // Inject the React overlay bundle
+      // Inject the React overlay bundle (CSS is included in the bundle)
       const script = document.createElement('script')
       script.src = chrome.runtime.getURL('assets/overlay.js')
       script.onload = () => {
@@ -150,4 +138,45 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ success: true })
   }
   return true
+})
+
+// Bridge messages between overlay and background script
+window.addEventListener('message', async (event) => {
+  // Only accept messages from same origin
+  if (event.source !== window) return
+  
+  if (event.data.type === 'API_CALL_REQUEST') {
+    console.log('🌉 Content Script: Received API request from overlay');
+    console.log('📋 Request data:', event.data);
+    
+    try {
+      console.log('📤 Content Script: Forwarding to background script');
+      
+      // Forward to background script
+      const response = await chrome.runtime.sendMessage({
+        action: 'makeApiCall',
+        data: event.data.payload
+      })
+      
+      console.log('📨 Content Script: Received response from background');
+      console.log('📋 Background response:', response);
+      
+      // Send response back to overlay
+      console.log('📤 Content Script: Sending response back to overlay');
+      window.postMessage({
+        type: 'API_CALL_RESPONSE',
+        requestId: event.data.requestId,
+        response: response
+      }, '*')
+    } catch (error) {
+      console.error('❌ Content Script: Error in API bridge:', error);
+      
+      // Send error back to overlay
+      window.postMessage({
+        type: 'API_CALL_RESPONSE',
+        requestId: event.data.requestId,
+        response: { success: false, error: error.message }
+      }, '*')
+    }
+  }
 })

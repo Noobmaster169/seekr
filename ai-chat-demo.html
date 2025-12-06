@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Assistant Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .demo-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .demo-section h2 {
+            color: #c4b5fd;
+            margin-bottom: 15px;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .feature-card h3 {
+            color: #a78bfa;
+            margin-bottom: 10px;
+        }
+        
+        .instructions {
+            background: rgba(168, 85, 247, 0.2);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 30px 0;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #c4b5fd;
+        }
+        
+        .kbd {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        
+        .sample-content {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid #a78bfa;
+        }
+        
+        .highlight {
+            background: rgba(168, 85, 247, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Chat Assistant Demo</h1>
+        
+        <div class="instructions">
+            <h3>🚀 How to Use the AI Chat</h3>
+            <p><strong>Step 1:</strong> Press <span class="kbd">Alt + L</span> to open the AI Chat overlay</p>
+            <p><strong>Step 2:</strong> Go to the Settings tab and configure your API key</p>
+            <p><strong>Step 3:</strong> Start chatting with the AI assistant!</p>
+            <p><em>The overlay will appear on top of this page and any other website you visit.</em></p>
+        </div>
+
+        <div class="demo-section">
+            <h2>✨ Features</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>🎯 Smart Conversations</h3>
+                    <p>Chat with advanced AI models like GPT-3.5 and GPT-4 for intelligent responses.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🌐 Universal Overlay</h3>
+                    <p>Works on any website - drag and position the chat wherever you need it.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>💾 Message History</h3>
+                    <p>Your conversations are saved locally and persist across sessions.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🎨 Beautiful UI</h3>
+                    <p>Glassmorphism design with smooth animations and modern interface.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>⚡ Real-time Streaming</h3>
+                    <p>See AI responses as they're generated with streaming support.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔒 Privacy First</h3>
+                    <p>Your API keys and conversations are stored locally in your browser.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>💬 Try These Sample Prompts</h2>
+            <div class="sample-content">
+                <p><strong>About this page:</strong> "What is this demo page about?"</p>
+                <p><strong>Explain concepts:</strong> "Explain how browser extensions work"</p>
+                <p><strong>Get help:</strong> "How do I get an OpenAI API key?"</p>
+                <p><strong>Creative tasks:</strong> "Write a short poem about AI assistants"</p>
+                <p><strong>Problem solving:</strong> "Help me debug this JavaScript error..."</p>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🛠️ Configuration</h2>
+            <p>The AI Chat supports multiple providers:</p>
+            <ul>
+                <li><span class="highlight">OpenAI</span> - GPT-3.5, GPT-4, and other models</li>
+                <li><span class="highlight">Anthropic</span> - Claude models (coming soon)</li>
+                <li><span class="highlight">Custom APIs</span> - Use your own AI endpoints</li>
+            </ul>
+            <p>To get started, you'll need an API key from your chosen provider. The most popular option is OpenAI, which you can get from <strong>platform.openai.com</strong>.</p>
+        </div>
+
+        <div class="demo-section">
+            <h2>🎮 Keyboard Shortcuts</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3><span class="kbd">Alt + L</span></h3>
+                    <p>Toggle the AI Chat overlay visibility</p>
+                </div>
+                <div class="feature-card">
+                    <h3><span class="kbd">Enter</span></h3>
+                    <p>Send your message to the AI</p>
+                </div>
+                <div class="feature-card">
+                    <h3><span class="kbd">Shift + Enter</span></h3>
+                    <p>Add a new line in your message</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>📱 Technical Details</h2>
+            <p>This AI Chat Assistant is built with:</p>
+            <ul>
+                <li><strong>React 18</strong> - Modern UI framework</li>
+                <li><strong>Framer Motion</strong> - Smooth animations</li>
+                <li><strong>TailwindCSS</strong> - Utility-first styling</li>
+                <li><strong>OpenAI SDK</strong> - AI model integration</li>
+                <li><strong>Marked</strong> - Markdown rendering</li>
+                <li><strong>DOMPurify</strong> - Safe HTML sanitization</li>
+            </ul>
+        </div>
+
+        <div class="instructions">
+            <h3>🎯 Ready to Chat?</h3>
+            <p>Press <span class="kbd">Alt + L</span> now to open the AI Chat overlay and start your conversation!</p>
+            <p><em>Make sure you have the browser extension loaded and configured with your API key.</em></p>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactivity to demonstrate the page context
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎯 AI Chat Demo page loaded');
+            console.log('📄 Page title:', document.title);
+            console.log('🌐 Page URL:', window.location.href);
+            
+            // Add a subtle animation to feature cards
+            const cards = document.querySelectorAll('.feature-card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.style.animation = 'fadeInUp 0.6s ease-out forwards';
+            });
+        });
+
+        // CSS animation for cards
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            .feature-card {
+                opacity: 0;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
