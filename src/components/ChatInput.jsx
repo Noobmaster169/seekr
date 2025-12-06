@@ -18,6 +18,7 @@ const ChatInput = ({ onSendMessage, isLoading, onStop, disabled = false }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (message.trim() && !isLoading && !disabled) {
+      // TODO: ADD CUSTOMIZED PROMPT HANDLING HERE
       onSendMessage(message.trim());
       setMessage('');
     }
