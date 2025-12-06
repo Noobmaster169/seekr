@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Check, X, AlertCircle, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Check, X, AlertCircle, Loader2, MessageSquare, Code } from 'lucide-react';
 import chatService from '../services/chatService';
+import { DEFAULT_PROMPTS, STRUCTURED_OUTPUT_SCHEMAS } from '../config/defaultPrompts';
 
 const ChatSettings = ({ onConfigChange }) => {
   const [config, setConfig] = useState({
     apiKey: '',
     provider: 'anthropic',
     model: 'claude-sonnet-4-5',
-    baseURL: 'https://api.anthropic.com/v1'
+    baseURL: 'https://api.anthropic.com/v1',
+    systemPrompt: DEFAULT_PROMPTS.productAssistant.prompt,
+    selectedPromptKey: 'productAssistant',
+    structuredOutputSchema: null,
+    selectedSchemaKey: 'none'
   });
   const [showApiKey, setShowApiKey] = useState(false);
   const [testStatus, setTestStatus] = useState(null);
@@ -29,16 +34,28 @@ const ChatSettings = ({ onConfigChange }) => {
             ...parsed,
             provider: 'anthropic',
             model: 'claude-sonnet-4-5',
-            baseURL: 'https://api.anthropic.com/v1'
+            baseURL: 'https://api.anthropic.com/v1',
+            systemPrompt: parsed.systemPrompt || DEFAULT_PROMPTS.productAssistant.prompt,
+            selectedPromptKey: parsed.selectedPromptKey || 'productAssistant',
+            structuredOutputSchema: parsed.structuredOutputSchema || null,
+            selectedSchemaKey: parsed.selectedSchemaKey || 'none'
           };
           setConfig(migratedConfig);
           localStorage.setItem('chat-config', JSON.stringify(migratedConfig));
           chatService.setConfig(migratedConfig);
           onConfigChange?.(migratedConfig);
         } else {
-          setConfig(parsed);
-          chatService.setConfig(parsed);
-          onConfigChange?.(parsed);
+          // Add missing fields to existing config
+          const updatedConfig = {
+            ...parsed,
+            systemPrompt: parsed.systemPrompt || DEFAULT_PROMPTS.productAssistant.prompt,
+            selectedPromptKey: parsed.selectedPromptKey || 'productAssistant',
+            structuredOutputSchema: parsed.structuredOutputSchema || null,
+            selectedSchemaKey: parsed.selectedSchemaKey || 'none'
+          };
+          setConfig(updatedConfig);
+          chatService.setConfig(updatedConfig);
+          onConfigChange?.(updatedConfig);
         }
       } catch (error) {
         console.error('Error loading saved config:', error);
@@ -56,6 +73,35 @@ const ChatSettings = ({ onConfigChange }) => {
 
   const handleInputChange = (field, value) => {
     const newConfig = { ...config, [field]: value };
+    saveConfig(newConfig);
+  };
+
+  const handlePromptChange = (promptKey) => {
+    const selectedPrompt = DEFAULT_PROMPTS[promptKey];
+    const newConfig = {
+      ...config,
+      selectedPromptKey: promptKey,
+      systemPrompt: selectedPrompt ? selectedPrompt.prompt : ''
+    };
+    saveConfig(newConfig);
+  };
+
+  const handleCustomPromptChange = (value) => {
+    const newConfig = {
+      ...config,
+      systemPrompt: value,
+      selectedPromptKey: 'customizable'
+    };
+    saveConfig(newConfig);
+  };
+
+  const handleSchemaChange = (schemaKey) => {
+    const selectedSchema = STRUCTURED_OUTPUT_SCHEMAS[schemaKey];
+    const newConfig = {
+      ...config,
+      selectedSchemaKey: schemaKey,
+      structuredOutputSchema: selectedSchema && selectedSchema.schema ? selectedSchema : null
+    };
     saveConfig(newConfig);
   };
 
@@ -90,16 +136,16 @@ const ChatSettings = ({ onConfigChange }) => {
 
   const providers = [
     { id: 'anthropic', name: 'Anthropic', baseURL: 'https://api.anthropic.com/v1' },
-    { id: 'openai', name: 'OpenAI', baseURL: 'https://api.openai.com/v1' },
-    { id: 'custom', name: 'Custom API', baseURL: '' }
+    //{ id: 'openai', name: 'OpenAI', baseURL: 'https://api.openai.com/v1' },
+    //{ id: 'custom', name: 'Custom API', baseURL: '' }
   ];
 
   const defaultModels = {
     anthropic: [
       'claude-sonnet-4-5'
     ],
-    openai: ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo-preview'],
-    custom: ['custom-model']
+    //openai: ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo-preview'],
+    //custom: ['custom-model']
   };
 
   const currentModels = availableModels.length > 0 ? availableModels : defaultModels[config.provider] || [];
@@ -193,6 +239,78 @@ const ChatSettings = ({ onConfigChange }) => {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* System Prompt Configuration */}
+        <div className="space-y-3 pt-4 border-t border-white/10">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-purple-400" />
+            <label className="block text-white/90 text-sm font-medium">
+              System Prompt
+            </label>
+          </div>
+          <select
+            value={config.selectedPromptKey}
+            onChange={(e) => handlePromptChange(e.target.value)}
+            className="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+          >
+            {Object.entries(DEFAULT_PROMPTS).map(([key, prompt]) => (
+              <option key={key} value={key} className="bg-gray-800">
+                {prompt.name}
+              </option>
+            ))}
+          </select>
+          
+          {/* Custom Prompt Text Area */}
+          <div className="space-y-2">
+            <label className="block text-white/70 text-xs">
+              {config.selectedPromptKey === 'customizable' ? 'Custom Prompt:' : 'Preview:'}
+            </label>
+            <textarea
+              value={config.systemPrompt}
+              onChange={(e) => handleCustomPromptChange(e.target.value)}
+              placeholder="Enter your custom system prompt..."
+              className="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm min-h-[120px] resize-y"
+              disabled={config.selectedPromptKey !== 'customizable'}
+            />
+          </div>
+        </div>
+
+        {/* Structured Output Configuration */}
+        <div className="space-y-3 pt-4 border-t border-white/10">
+          <div className="flex items-center gap-2">
+            <Code className="w-4 h-4 text-blue-400" />
+            <label className="block text-white/90 text-sm font-medium">
+              Structured Output
+            </label>
+          </div>
+          <select
+            value={config.selectedSchemaKey}
+            onChange={(e) => handleSchemaChange(e.target.value)}
+            className="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+          >
+            {Object.entries(STRUCTURED_OUTPUT_SCHEMAS).map(([key, schema]) => (
+              <option key={key} value={key} className="bg-gray-800">
+                {schema.name}
+              </option>
+            ))}
+          </select>
+          
+          {config.selectedSchemaKey !== 'none' && (
+            <div className="bg-white/5 rounded-lg p-3 border border-white/20">
+              <p className="text-white/70 text-xs mb-2">
+                {STRUCTURED_OUTPUT_SCHEMAS[config.selectedSchemaKey]?.description}
+              </p>
+              {config.structuredOutputSchema?.schema && (
+                <details className="text-white/60 text-xs">
+                  <summary className="cursor-pointer hover:text-white/80">View Schema</summary>
+                  <pre className="mt-2 overflow-x-auto">
+                    {JSON.stringify(config.structuredOutputSchema.schema, null, 2)}
+                  </pre>
+                </details>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Test Connection */}

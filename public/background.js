@@ -142,19 +142,19 @@ async function handleUniqloScrape(url, productId) {
   }
 }
 
-async function handleApiCall({ provider, apiKey, baseURL, model, messages, stream = false }) {
+async function handleApiCall({ provider, apiKey, baseURL, model, messages, stream = false, structuredOutputSchema = null }) {
   console.log(`🎯 Background Script: Making ${provider} API call`);
-  console.log('📋 Call parameters:', { provider, baseURL, model, messagesCount: messages.length });
+  console.log('📋 Call parameters:', { provider, baseURL, model, messagesCount: messages.length, hasStructuredOutput: !!structuredOutputSchema });
   
   try {
     if (provider === 'anthropic') {
       console.log('🤖 Background Script: Calling Anthropic API');
-      const result = await makeAnthropicCall({ apiKey, baseURL, model, messages, stream });
+      const result = await makeAnthropicCall({ apiKey, baseURL, model, messages, stream, structuredOutputSchema });
       console.log('✅ Background Script: Anthropic call successful, result:', result);
       return result;
     } else {
       console.log('🤖 Background Script: Calling OpenAI API');
-      const result = await makeOpenAICall({ apiKey, baseURL, model, messages, stream });
+      const result = await makeOpenAICall({ apiKey, baseURL, model, messages, stream, structuredOutputSchema });
       console.log('✅ Background Script: OpenAI call successful, result:', result);
       return result;
     }
@@ -164,7 +164,7 @@ async function handleApiCall({ provider, apiKey, baseURL, model, messages, strea
   }
 }
 
-async function makeAnthropicCall({ apiKey, baseURL, model, messages, stream }) {
+async function makeAnthropicCall({ apiKey, baseURL, model, messages, stream, structuredOutputSchema = null }) {
   // Convert OpenAI format to Anthropic format
   const systemMessage = messages.find(msg => msg.role === 'system');
   const conversationMessages = messages.filter(msg => msg.role !== 'system');
@@ -179,6 +179,19 @@ async function makeAnthropicCall({ apiKey, baseURL, model, messages, stream }) {
 
   if (systemMessage) {
     requestBody.system = systemMessage.content;
+  }
+
+  // Add structured output configuration if provided
+  // For Anthropic, we can use their tool calling feature or prompt engineering
+  // Here we'll add it as a JSON schema instruction in the system prompt
+  if (structuredOutputSchema && structuredOutputSchema.schema) {
+    const schemaInstruction = `\n\nIMPORTANT: You must respond with a JSON object that matches this exact schema:\n${JSON.stringify(structuredOutputSchema.schema, null, 2)}\n\nYour response should be valid JSON only, without any additional text or markdown formatting.`;
+    
+    if (requestBody.system) {
+      requestBody.system += schemaInstruction;
+    } else {
+      requestBody.system = schemaInstruction;
+    }
   }
 
   const response = await fetch(`${baseURL}/messages`, {
@@ -207,20 +220,47 @@ async function makeAnthropicCall({ apiKey, baseURL, model, messages, stream }) {
   return result;
 }
 
-async function makeOpenAICall({ apiKey, baseURL, model, messages, stream }) {
+async function makeOpenAICall({ apiKey, baseURL, model, messages, stream, structuredOutputSchema = null }) {
+  const requestBody = {
+    model: model,
+    messages: messages,
+    stream: false, // Disable streaming for OpenAI too
+    temperature: 0.7,
+    max_tokens: 2000,
+  };
+
+  // Add structured output configuration for OpenAI (if schema provided)
+  if (structuredOutputSchema && structuredOutputSchema.schema) {
+    requestBody.response_format = {
+      type: 'json_object'
+    };
+    
+    // Add schema instructions to the last user message or system message
+    const schemaInstruction = `\n\nYou must respond with a JSON object that matches this schema:\n${JSON.stringify(structuredOutputSchema.schema, null, 2)}`;
+    
+    // Find system message and append or create one
+    const systemMsgIndex = messages.findIndex(msg => msg.role === 'system');
+    if (systemMsgIndex !== -1) {
+      requestBody.messages = [...messages];
+      requestBody.messages[systemMsgIndex] = {
+        ...requestBody.messages[systemMsgIndex],
+        content: requestBody.messages[systemMsgIndex].content + schemaInstruction
+      };
+    } else {
+      requestBody.messages = [
+        { role: 'system', content: schemaInstruction },
+        ...messages
+      ];
+    }
+  }
+
   const response = await fetch(`${baseURL}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: model,
-      messages: messages,
-      stream: false, // Disable streaming for OpenAI too
-      temperature: 0.7,
-      max_tokens: 2000,
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {

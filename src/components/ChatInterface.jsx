@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Clock } from 'lucide-react';
+import { MessageSquare, Clock, Sparkles } from 'lucide-react';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import chatService from '../services/chatService';
+import { DEFAULT_PROMPTS } from '../config/defaultPrompts';
 
 const ChatInterface = forwardRef(({ isConfigured }, ref) => {
   const [conversations, setConversations] = useState([]);
@@ -12,11 +13,32 @@ const ChatInterface = forwardRef(({ isConfigured }, ref) => {
   const [isLoading, setIsLoading] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState('');
   const [showHistory, setShowHistory] = useState(false);
+  const [assistantMode, setAssistantMode] = useState('Product Search Assistant');
   const messagesEndRef = useRef(null);
   const abortControllerRef = useRef(null);
 
-  // Load conversations on mount
+  // Load conversations and config on mount
   useEffect(() => {
+    // Load assistant mode from config
+    const loadConfig = () => {
+      const savedConfig = localStorage.getItem('chat-config');
+      if (savedConfig) {
+        try {
+          const config = JSON.parse(savedConfig);
+          const promptKey = config.selectedPromptKey || 'productAssistant';
+          const promptInfo = DEFAULT_PROMPTS[promptKey];
+          setAssistantMode(promptInfo?.name || 'AI Assistant');
+        } catch (error) {
+          console.error('Error loading config:', error);
+        }
+      }
+    };
+    
+    loadConfig();
+    
+    // Listen for config changes
+    window.addEventListener('storage', loadConfig);
+    
     const savedConversations = localStorage.getItem('chat-conversations');
     if (savedConversations) {
       try {
@@ -37,6 +59,8 @@ const ChatInterface = forwardRef(({ isConfigured }, ref) => {
     } else {
       createNewConversation();
     }
+    
+    return () => window.removeEventListener('storage', loadConfig);
   }, []);
 
   // Save current conversation whenever messages change
@@ -356,10 +380,16 @@ const ChatInterface = forwardRef(({ isConfigured }, ref) => {
               animate={{ opacity: 1 }}
               className="flex flex-col items-center justify-center h-full text-center py-8"
             >
-              <MessageSquare className="w-16 h-16 text-white/20 mb-4" />
+              <div className="relative mb-4">
+                <MessageSquare className="w-16 h-16 text-white/20" />
+                <Sparkles className="w-6 h-6 text-purple-400 absolute -top-1 -right-1" />
+              </div>
               <h3 className="text-white/90 font-medium mb-2">Start a Conversation</h3>
-              <p className="text-white/60 text-sm mb-6 max-w-xs">
-                Ask me anything! I can help you understand content, answer questions, or just have a chat.
+              <p className="text-white/60 text-sm mb-2 max-w-xs">
+                Chat with your {assistantMode}
+              </p>
+              <p className="text-white/50 text-xs mb-6 max-w-xs">
+                I can help you discover products, provide recommendations, and answer your questions.
               </p>
               <div className="grid grid-cols-1 gap-2 w-full max-w-sm">
                 {[

@@ -5,6 +5,8 @@ class ChatService {
     this.provider = 'anthropic'; // Default provider
     this.model = 'claude-sonnet-4-5';
     this.baseURL = 'https://api.anthropic.com/v1';
+    this.systemPrompt = null; // Default system prompt
+    this.structuredOutputSchema = null; // Structured output configuration
   }
 
   // Set API configuration
@@ -13,17 +15,30 @@ class ChatService {
     this.provider = config.provider || 'anthropic';
     this.model = config.model || 'claude-sonnet-4-5';
     this.baseURL = config.baseURL || 'https://api.anthropic.com/v1';
+    this.systemPrompt = config.systemPrompt || null;
+    this.structuredOutputSchema = config.structuredOutputSchema || null;
   }
 
   // Send message to LLM and get response
-  async sendMessage(messages, onStream = null) {
+  async sendMessage(messages, onStream = null, options = {}) {
     if (!this.apiKey) {
       throw new Error('API key not configured. Please set your API key in settings.');
     }
 
+    // Inject system prompt if configured and not already present
+    let processedMessages = [...messages];
+    const hasSystemMessage = messages.some(msg => msg.role === 'system');
+    
+    if (this.systemPrompt && !hasSystemMessage && !options.skipSystemPrompt) {
+      processedMessages = [
+        { role: 'system', content: this.systemPrompt },
+        ...messages
+      ];
+    }
+
     try {
       // Use background script for API calls to avoid CORS issues
-      return await this.sendMessageViaBackground(messages, onStream);
+      return await this.sendMessageViaBackground(processedMessages, onStream, options);
     } catch (error) {
       console.error('Chat service error:', error);
       throw error;
@@ -31,7 +46,7 @@ class ChatService {
   }
 
   // Send message via background script through content script bridge
-  async sendMessageViaBackground(messages, onStream = null) {
+  async sendMessageViaBackground(messages, onStream = null, options = {}) {
     console.log('🚀 ChatService: Starting sendMessageViaBackground');
     console.log('📝 Messages:', messages);
     console.log('🔧 Provider:', this.provider);
@@ -47,7 +62,8 @@ class ChatService {
         baseURL: this.baseURL,
         model: this.model,
         messages: messages,
-        stream: !!onStream
+        stream: !!onStream,
+        structuredOutputSchema: this.structuredOutputSchema
       };
       
       console.log('📦 Payload:', payload);
