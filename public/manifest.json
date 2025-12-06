@@ -5,11 +5,17 @@
   "description": "Beautiful glassmorphism overlay plugin for any website",
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "tabs",
+    "scripting"
   ],
   "host_permissions": [
     "https://api.anthropic.com/*",
-    "https://api.openai.com/*"
+    "https://api.openai.com/*",
+    "https://*.uniqlo.com/*",
+    "http://*.uniqlo.com/*",
+    "https://image.uniqlo.com/*",
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "background.js"

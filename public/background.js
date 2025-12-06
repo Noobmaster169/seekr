@@ -23,7 +23,124 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Return true to indicate we'll send a response asynchronously
     return true;
   }
+  
+  // Handle Uniqlo scraping requests
+  if (request.action === 'scrapeUniqlo') {
+    console.log('🛍️ Background Script: Scraping Uniqlo:', request.url);
+    
+    handleUniqloScrape(request.url, request.productId)
+      .then(result => {
+        console.log('✅ Background Script: Scrape successful');
+        sendResponse(result);
+      })
+      .catch(error => {
+        console.error('❌ Background Script: Scrape failed:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+    
+    return true;
+  }
 });
+
+async function handleUniqloScrape(url, productId) {
+  try {
+    // Create a new tab in the background
+    const tab = await chrome.tabs.create({ url: url, active: false });
+    
+    console.log(`📑 Created tab ${tab.id} for scraping`);
+    
+    // Wait for page to load
+    await new Promise((resolve) => {
+      const listener = (tabId, changeInfo) => {
+        if (tabId === tab.id && changeInfo.status === 'complete') {
+          chrome.tabs.onUpdated.removeListener(listener);
+          // Give extra time for JS to execute
+          setTimeout(resolve, 3000);
+        }
+      };
+      chrome.tabs.onUpdated.addListener(listener);
+    });
+    
+    console.log('✅ Tab loaded, injecting scraper...');
+    
+    // Inject and execute scraping script
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        // Scrape color options
+        const colorOptions = [];
+        const colorPickers = document.querySelectorAll('[name="product-color-picker"]');
+        
+        colorPickers.forEach((input) => {
+          const inputId = input.getAttribute('id');
+          const label = document.querySelector(`label[for="${inputId}"]`);
+          
+          if (label) {
+            const colorNameEl = label.querySelector('.fr-implicit');
+            const colorName = colorNameEl ? colorNameEl.textContent.trim() : '';
+            const colorValue = input.getAttribute('value') || '';
+            const styleAttr = label.getAttribute('style') || '';
+            
+            let iconUrl = '';
+            const match = styleAttr.match(/background-image:\s*url\(["\']?(.+?)["\']?\)/);
+            if (match) {
+              iconUrl = match[1];
+            }
+            
+            colorOptions.push({
+              name: colorName,
+              value: colorValue,
+              iconUrl: iconUrl
+            });
+          }
+        });
+        
+        // Scrape size options
+        const sizeOptions = [];
+        const sizePickers = document.querySelectorAll('[name="product-size-picker"]');
+        
+        sizePickers.forEach((input) => {
+          const inputId = input.getAttribute('id');
+          const label = document.querySelector(`label[for="${inputId}"]`);
+          
+          if (label) {
+            const sizeTextEl = label.querySelector('.fr-chip-text');
+            const sizeText = sizeTextEl ? sizeTextEl.textContent.trim() : '';
+            const sizeValue = input.getAttribute('value') || '';
+            
+            const hasStrikethrough = label.querySelector('.chip-strikethrough-icon') !== null;
+            const isAvailable = !hasStrikethrough;
+            
+            sizeOptions.push({
+              name: sizeText,
+              value: sizeValue,
+              available: isAvailable
+            });
+          }
+        });
+        
+        return { colors: colorOptions, sizes: sizeOptions };
+      }
+    });
+    
+    // Close the tab
+    await chrome.tabs.remove(tab.id);
+    console.log(`🗑️ Closed tab ${tab.id}`);
+    
+    const scraped = results[0].result;
+    
+    return {
+      success: true,
+      productId: productId,
+      url: url,
+      colors: scraped.colors,
+      sizes: scraped.sizes
+    };
+  } catch (error) {
+    console.error('❌ Scrape error:', error);
+    throw error;
+  }
+}
 
 async function handleApiCall({ provider, apiKey, baseURL, model, messages, stream = false }) {
   console.log(`🎯 Background Script: Making ${provider} API call`);

@@ -179,4 +179,37 @@ window.addEventListener('message', async (event) => {
       }, '*')
     }
   }
+  
+  // Handle scrape requests
+  if (event.data.type === 'SCRAPE_UNIQLO_REQUEST') {
+    console.log('🛍️ Content Script: Received scrape request from overlay');
+    console.log('📋 URL:', event.data.url);
+    
+    try {
+      // Forward to background script
+      const response = await chrome.runtime.sendMessage({
+        action: 'scrapeUniqlo',
+        url: event.data.url,
+        productId: event.data.productId
+      })
+      
+      console.log('✅ Content Script: Scrape successful');
+      
+      // Send response back to overlay
+      window.postMessage({
+        type: 'SCRAPE_UNIQLO_RESPONSE',
+        requestId: event.data.requestId,
+        result: response
+      }, '*')
+    } catch (error) {
+      console.error('❌ Content Script: Scrape error:', error);
+      
+      // Send error back to overlay
+      window.postMessage({
+        type: 'SCRAPE_UNIQLO_RESPONSE',
+        requestId: event.data.requestId,
+        result: { success: false, error: error.message }
+      }, '*')
+    }
+  }
 })
