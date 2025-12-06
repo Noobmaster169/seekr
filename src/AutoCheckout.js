@@ -1,7 +1,7 @@
 // Configuration
 export const config = {
     productUrl: "https://www.uniqlo.com/my/en/products/E474244-000?colorCode=COL69&sizeCode=SMA006",
-    size: "0",      // e.g., "S", "M", "L", "XL", "32", "34", etc.
+    size: "M",      // e.g., "S", "M", "L", "XL", "32", "34", etc.
     color: "0",     // e.g., "Black", "White", "Blue", etc.
     email: "yash.mahmud@gmail.com",
     password: "CursorTestThing!92",
@@ -23,21 +23,19 @@ export const config = {
   
     // Select color if specified
     if (color && color !== "0") {
-      const colorOption = page.locator(`button:has-text("${color}"), [aria-label*="${color}" i], [title*="${color}" i], [data-color*="${color}" i]`).first();
-      if (await colorOption.isVisible().catch(() => false)) {
-        await colorOption.click();
-        await page.waitForTimeout(randomDelay(300, 600));
+      try {
+        await page.locator('[data-test="' + color + '"] label').filter({ hasText: color }).click();
+      } catch (error) {
+        console.error('Error selecting color: ' + error);
       }
     }
   
     // Select size if specified
     if (size && size !== "0") {
-      const sizeOption = page.locator(`button:has-text("${size}"), [aria-label*="${size}"], [data-size="${size}"]`).first();
-      if (await sizeOption.isVisible().catch(() => false)) {
-        await sizeOption.click();
-        await page.waitForTimeout(randomDelay(300, 600));
-      }
+      await page.locator('[data-test="' + size + '"] label').filter({ hasText: size }).click();
     }
+
+    await page.waitForTimeout(randomDelay(2000, 5000));
     
     // Click the Add to Cart button
     await page.getByRole('button', { name: /(add to (cart|bag|basket)|^add$)/i }).click();
@@ -47,9 +45,10 @@ export const config = {
   
     // Click View Cart
     await page.getByRole('button', { name: /view cart/i }).waitFor({ state: 'visible' });
-    await page.waitForTimeout(randomDelay(300, 800));
     await page.getByRole('button', { name: /view cart/i }).click();
   
+    await page.waitForTimeout(randomDelay(300, 800));
+
     // Wait and click Checkout
     await page.waitForTimeout(randomDelay(1000, 2500));
     await page.getByRole('button', { name: /checkout/i }).waitFor({ state: 'visible' });
@@ -108,8 +107,72 @@ export const config = {
       if (!clicked) {
         throw new Error('Could not find login button');
       }
+
+      // Wait and click Checkout
+      await page.waitForTimeout(randomDelay(1000, 2500));
+      await page.getByRole('button', { name: /checkout/i }).waitFor({ state: 'visible' });
+      await page.waitForTimeout(randomDelay(300, 800));
+      await page.getByRole('button', { name: /checkout/i }).click();
     }
     
+    // If address is found on page, click on "Continue to Payment"
+    const addressFound = await page.getByText(/address/i).first().isVisible().catch(() => false);
+    if (!addressFound) {
+      await page.getByRole('button', { name: /register a new address/i }).waitFor({ state: 'visible' });
+      await page.getByRole('button', { name: /register a new address/i }).click();
+      await page.waitForTimeout(randomDelay(300, 800));
+
+      // Fill in the address fields "First Name", "Last name", "Address 1", "Address 2", "City", "State", "Zip Code/Postal Code", "Country", "Phone", "Mobile Phone"
+      await page.getByLabel('First Name').fill('John');
+      await page.getByLabel('Last Name').fill('Doe');
+      await page.getByLabel('Address 1').fill('Jalan Lagoon Selatan, Bandar Sunway');
+      await page.getByLabel('Address 2').fill('Address Values');
+      await page.getByLabel('City').fill('Subang Jaya');
+      
+      // Select the state from the dropdown
+      const stateField = page.getByLabel('State');
+      await stateField.click();
+      await page.waitForTimeout(randomDelay(300, 600)); // Wait for dropdown to open
+      
+      // Try multiple ways to select the state
+      const stateOption = page.getByRole('option', { name: /Selangor/i }).first();
+      if (await stateOption.isVisible().catch(() => false)) {
+        await stateOption.click();
+      } else {
+        // Fallback: try using select element directly
+        await page.selectOption('select[aria-label*="State" i], select[name*="state" i]', { label: /Selangor/i }).catch(() => {});
+      }
+      
+      await page.waitForTimeout(randomDelay(3200, 3400));
+      await page.getByLabel('Zip Code/Postal Code').fill('47500');
+      await page.getByLabel('Country').fill('Malaysia');
+      await page.getByLabel('Phone').fill('143472169');
+
+      // Click on "Continue to Payment"
+      await page.getByRole('button', { name: /register/i }).waitFor({ state: 'visible' });
+      await page.getByRole('button', { name: /register/i }).click();
+    }
+
+    await page.getByRole('button', { name: /continue to payment/i }).waitFor({ state: 'visible' });
+    await page.getByRole('button', { name: /continue to payment/i }).click();
+
+    await page.waitForTimeout(randomDelay(1000, 2500));
+
+    // Select "Ship to address" or "Click & Collect" depending on the settings (its a single choice)
+    const shipToAddress = await page.getByRole('button', { name: /ship to address/i }).isVisible().catch(() => false);
+    if (shipToAddress) {
+      await page.getByRole('button', { name: /ship to address/i }).click();
+    }
+    else {
+      await page.getByRole('button', { name: /click & collect/i }).click();
+    }
+
+    await page.waitForTimeout(randomDelay(1000, 2500));
+
+    // Click on "Continue to Payment"
+    await page.getByRole('button', { name: /continue to payment/i }).waitFor({ state: 'visible' });
+    await page.getByRole('button', { name: /continue to payment/i }).click();
+
     await page.waitForTimeout(randomDelay(1000, 2500));
   }
 

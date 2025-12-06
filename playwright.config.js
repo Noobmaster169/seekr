@@ -37,7 +37,11 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { 
+        ...devices['Desktop Chrome'],
+        // Use real Google Chrome instead of Chromium
+        channel: 'chrome',
+      },
     },
     /*
     {
