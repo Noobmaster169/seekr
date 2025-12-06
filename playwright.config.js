@@ -31,6 +31,26 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+    
+    /* Make browser appear more human-like to avoid bot detection */
+    viewport: { width: 1920, height: 1080 },
+    locale: 'en-US',
+    timezoneId: 'Asia/Kuala_Lumpur',
+    // Realistic user agent
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    // Accept language header
+    extraHTTPHeaders: {
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Connection': 'keep-alive',
+      'Upgrade-Insecure-Requests': '1',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
+      'Sec-Fetch-User': '?1',
+      'Cache-Control': 'max-age=0',
+    },
   },
 
   /* Configure projects for major browsers */
@@ -39,16 +59,62 @@ export default defineConfig({
       name: 'chromium',
       use: { 
         ...devices['Desktop Chrome'],
-        // Use real Google Chrome instead of Chromium
+        // Use real Google Chrome instead of Chromium (better for anti-detection)
         channel: 'chrome',
+        // Stealth mode - remove automation indicators
+        launchOptions: {
+          args: [
+            '--disable-blink-features=AutomationControlled',
+            '--disable-dev-shm-usage',
+            '--disable-setuid-sandbox',
+            '--no-first-run',
+            '--no-sandbox',
+            '--disable-infobars',
+            '--disable-background-networking',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-breakpad',
+            '--disable-component-extensions-with-background-pages',
+            '--disable-default-apps',
+            '--disable-extensions',
+            '--disable-features=TranslateUI',
+            '--disable-hang-monitor',
+            '--disable-ipc-flooding-protection',
+            '--disable-popup-blocking',
+            '--disable-prompt-on-repost',
+            '--disable-renderer-backgrounding',
+            '--disable-sync',
+            '--disable-translate',
+            '--metrics-recording-only',
+            '--no-default-browser-check',
+            '--no-pings',
+            '--password-store=basic',
+            '--use-mock-keychain',
+          ],
+        },
       },
     },
     /*
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
+      use: { 
+        ...devices['Desktop Firefox'],
+        channel: 'firefox',
+        // Use persistent context - keeps Firefox settings between runs
+        // This creates a profile that persists (closest to using your actual profile)
+        storageState: undefined, // Will create new persistent context
+        // Stealth mode - remove automation indicators for Firefox
+        launchOptions: {
+          firefoxUserPrefs: {
+            'dom.webdriver.enabled': false,
+            'useAutomationExtension': false,
+            'marionette.enabled': false,
+          },
+        },
+      },
+    },*/
+    
+/*
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },

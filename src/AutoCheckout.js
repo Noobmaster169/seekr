@@ -48,9 +48,11 @@ export const config = {
     try {
       // Navigate to product page
       await page.goto(productUrl, { 
-        waitUntil: 'domcontentloaded',
+        waitUntil: 'load',  // Wait for all resources (images, stylesheets, etc.) to load
         timeout: 60000 
       });
+      // Alternatively, wait for network to be idle (no requests for 500ms)
+      // await page.waitForLoadState('networkidle');
     } catch (error) {
       // Check for heavy traffic indicators
       if (isHeavyTrafficError(error)) {
@@ -58,8 +60,6 @@ export const config = {
       }
       throw error;
     }
-    
-    try {
   
     // Select color if specified
     if (color && color !== "0") {
@@ -148,12 +148,22 @@ export const config = {
         throw new Error('Could not find login button');
       }
 
+      await page.waitForLoadState('load');
+
+      // If page says added to cart
+      const addedToCart = await page.getByText(/your cart has been updated/i).first().isVisible().catch(() => false);
+      if (addedToCart) {
+        await page.locator('[data-test="ok-button"]').click();
+      }
+
       // Wait and click Checkout
       await page.waitForTimeout(randomDelay(1000, 2500));
       await page.getByRole('button', { name: /checkout/i }).waitFor({ state: 'visible' });
       await page.waitForTimeout(randomDelay(300, 800));
       await page.getByRole('button', { name: /checkout/i }).click();
     }
+
+    await page.waitForLoadState('load');
     
     // If address is found on page, click on "Continue to Payment"
     const addressFound = await page.getByText(/address/i).first().isVisible().catch(() => false);
@@ -171,10 +181,6 @@ export const config = {
       
       // Select the state from the dropdown
       await page.getByLabel('State Please select a state.').selectOption('Selangor');
-      await page.waitForTimeout(randomDelay(300, 600)); // Wait for dropdown to open
-
-      
-      await page.waitForTimeout(randomDelay(3200, 3400));
 
       await page.getByRole('textbox', { name: 'Postal code' }).click();
       await page.getByRole('textbox', { name: 'Postal code' }).fill('47500');
@@ -191,24 +197,10 @@ export const config = {
 
     await page.waitForTimeout(randomDelay(1000, 2500));
 
-    // Select "Ship to address" or "Click & Collect" depending on the settings (its a single choice)
-    const shipToAddress = await page.getByRole('button', { name: /ship to address/i }).isVisible().catch(() => false);
-    if (shipToAddress) {
-      await page.getByRole('button', { name: /ship to address/i }).click();
-    }
-    else {
-      await page.getByRole('button', { name: /click & collect/i }).click();
-    }
-
-    await page.waitForTimeout(randomDelay(1000, 2500));
 
     // Click on "Continue to Payment"
-    await page.locator('[data-test="continue-to-payment-button"]').click();
-    await page.locator('[data-test="continue-to-payment-button"]').click();
-
-    await page.waitForTimeout(randomDelay(1000, 2500));
-
-    await page.locator('[data-test="continue-to-payment-button"]').click();
+    await page.getByRole('button', { name: /continue to payment/i }).waitFor({ state: 'visible' });
+    await page.getByRole('button', { name: /continue to payment/i }).click();
 
     await page.waitForTimeout(randomDelay(1000, 2500));
 
@@ -219,10 +211,10 @@ export const config = {
     await page.waitForTimeout(randomDelay(1000, 2500));
 
     await page.locator('[data-test="continue-button"]').click();
-    await page.waitForTimeout(randomDelay(1000, 2500));
+    await page.waitForLoadState('load');
     await page.locator('[data-test="place-order-button"]').click();
-    await page.waitForTimeout(randomDelay(1000, 2500));
-    await page.getByRole('textbox').click();
+    await page.waitForLoadState('load');
+
     await page.getByRole('textbox').fill('MaybankUsername');
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('textbox').fill('MaybankPassword');
@@ -232,15 +224,6 @@ export const config = {
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Confirm' }).click();
     await page.getByRole('button', { name: 'I\'ve approved/rejected my' }).click();
-    
-    } catch (error) {
-      // Check for heavy traffic indicators throughout the checkout process
-      if (isHeavyTrafficError(error)) {
-        throwHeavyTrafficError();
-      }
-      // Re-throw other errors as-is
-      throw error;
-    }
   }
 
   // Common cookie accept button selectors for different sites
