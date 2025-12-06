@@ -1,35 +1,101 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Trash2, Download, RefreshCw } from 'lucide-react';
+import { MessageSquare, Clock } from 'lucide-react';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import chatService from '../services/chatService';
 
-const ChatInterface = ({ isConfigured }) => {
+const ChatInterface = forwardRef(({ isConfigured }, ref) => {
+  const [conversations, setConversations] = useState([]);
+  const [currentConversationId, setCurrentConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
   const messagesEndRef = useRef(null);
   const abortControllerRef = useRef(null);
 
-  // Load saved messages
+  // Load conversations on mount
   useEffect(() => {
-    const savedMessages = localStorage.getItem('chat-messages');
-    if (savedMessages) {
+    const savedConversations = localStorage.getItem('chat-conversations');
+    if (savedConversations) {
       try {
-        setMessages(JSON.parse(savedMessages));
+        const parsed = JSON.parse(savedConversations);
+        setConversations(parsed);
+        // Load the most recent conversation
+        if (parsed.length > 0) {
+          const mostRecent = parsed[0];
+          setCurrentConversationId(mostRecent.id);
+          setMessages(mostRecent.messages);
+        } else {
+          createNewConversation();
+        }
       } catch (error) {
-        console.error('Error loading saved messages:', error);
+        console.error('Error loading conversations:', error);
+        createNewConversation();
       }
+    } else {
+      createNewConversation();
     }
   }, []);
 
-  // Save messages whenever they change
+  // Save current conversation whenever messages change
   useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem('chat-messages', JSON.stringify(messages));
+    if (currentConversationId && messages.length > 0) {
+      updateCurrentConversation();
     }
   }, [messages]);
+
+  const createNewConversation = () => {
+    const newConv = {
+      id: Date.now().toString(),
+      title: 'New Chat',
+      messages: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    setConversations(prev => [newConv, ...prev]);
+    setCurrentConversationId(newConv.id);
+    setMessages([]);
+    saveConversations([newConv, ...conversations]);
+  };
+
+  const loadConversation = (convId) => {
+    const conv = conversations.find(c => c.id === convId);
+    if (conv) {
+      setCurrentConversationId(conv.id);
+      setMessages(conv.messages);
+      setShowHistory(false);
+    }
+  };
+
+  const updateCurrentConversation = () => {
+    const updatedConvs = conversations.map(conv => {
+      if (conv.id === currentConversationId) {
+        // Generate title from first user message
+        let title = conv.title;
+        if (conv.title === 'New Chat' && messages.length > 0) {
+          const firstUserMsg = messages.find(m => m.role === 'user');
+          if (firstUserMsg) {
+            title = firstUserMsg.content.slice(0, 30) + (firstUserMsg.content.length > 30 ? '...' : '');
+          }
+        }
+        return {
+          ...conv,
+          title,
+          messages,
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return conv;
+    });
+    setConversations(updatedConvs);
+    saveConversations(updatedConvs);
+  };
+
+  const saveConversations = (convs) => {
+    localStorage.setItem('chat-conversations', JSON.stringify(convs));
+  };
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -119,46 +185,101 @@ const ChatInterface = ({ isConfigured }) => {
     }
   };
 
-  const clearChat = () => {
-    setMessages([]);
-    localStorage.removeItem('chat-messages');
+  const formatRelativeTime = (timestamp) => {
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
   };
 
-  const exportChat = () => {
-    const chatData = {
-      messages,
-      exportDate: new Date().toISOString(),
-      totalMessages: messages.length
-    };
-    
-    const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `chat-export-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const toggleHistory = () => {
+    setShowHistory(prev => !prev);
   };
 
-  const refreshChat = () => {
-    // Add a system message about page context
-    const pageInfo = {
-      url: window.location.href,
-      title: document.title,
-      domain: window.location.hostname
+  const showProductDemo = () => {
+    // Demo products data
+    const demoProducts = [
+      {
+        id: 1,
+        title: 'Premium Wireless Headphones',
+        price: 299.99,
+        description: 'High-quality audio with active noise cancellation',
+        image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop',
+        colors: [
+          { name: 'Midnight Black', hex: '#1a1a1a' },
+          { name: 'Silver', hex: '#C0C0C0' },
+          { name: 'Rose Gold', hex: '#B76E79' },
+        ],
+      },
+      {
+        id: 2,
+        title: 'Smart Fitness Watch',
+        price: 449.99,
+        description: 'Track your health and fitness goals',
+        image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop',
+        colors: [
+          { name: 'Space Gray', hex: '#52575C' },
+          { name: 'Gold', hex: '#FFD700' },
+          { name: 'White', hex: '#FFFFFF' },
+        ],
+      },
+      {
+        id: 3,
+        title: 'Designer Sneakers',
+        price: 189.99,
+        description: 'Comfortable and stylish',
+        image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop',
+        colors: [
+          { name: 'White', hex: '#FFFFFF' },
+          { name: 'Black', hex: '#000000' },
+          { name: 'Navy Blue', hex: '#001f3f' },
+        ],
+      },
+    ];
+
+    const handleProductSelect = (product) => {
+      console.log('Product selected:', product);
+      // Add a confirmation message
+      const confirmMessage = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: `✅ Great choice! You selected **${product.title}** ($${product.price}).\n\nWould you like to proceed with customizing your order?`,
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, confirmMessage]);
     };
 
-    const contextMessage = {
+    const productMessage = {
       id: Date.now(),
       role: 'assistant',
-      content: `🔄 **Chat Refreshed**\n\nI can now help you with the current page:\n\n**Page**: ${pageInfo.title}\n**URL**: ${pageInfo.url}\n**Domain**: ${pageInfo.domain}\n\nFeel free to ask me anything about this page or any other topic!`,
-      timestamp: new Date().toISOString()
+      content: `🛍️ **Product Recommendations**\n\nBased on your browsing, here are some products you might like. Browse through and select one to continue:`,
+      timestamp: new Date().toISOString(),
+      component: {
+        type: 'product-carousel',
+        data: {
+          products: demoProducts,
+          onSelectProduct: handleProductSelect
+        }
+      }
     };
 
-    setMessages(prev => [...prev, contextMessage]);
+    setMessages(prev => [...prev, productMessage]);
   };
+
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    createNewConversation,
+    showProductDemo,
+    toggleHistory
+  }));
 
   if (!isConfigured) {
     return (
@@ -182,53 +303,49 @@ const ChatInterface = ({ isConfigured }) => {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Chat Header */}
-      <div className="flex items-center justify-between p-4 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-purple-400" />
-          <span className="text-white font-medium">AI Chat</span>
-          <span className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded-full">
-            {messages.length} messages
-          </span>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <motion.button
-            onClick={refreshChat}
-            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            title="Refresh with page context"
+    <div className="flex h-full">
+      {/* History Sidebar */}
+      <AnimatePresence>
+        {showHistory && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 200, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="border-r border-white/10 overflow-hidden"
           >
-            <RefreshCw className="w-4 h-4 text-white/60" />
-          </motion.button>
-          
-          {messages.length > 0 && (
-            <>
-              <motion.button
-                onClick={exportChat}
-                className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                title="Export chat"
-              >
-                <Download className="w-4 h-4 text-white/60" />
-              </motion.button>
-              
-              <motion.button
-                onClick={clearChat}
-                className="p-2 rounded-lg hover:bg-red-500/20 transition-colors"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                title="Clear chat"
-              >
-                <Trash2 className="w-4 h-4 text-red-400" />
-              </motion.button>
-            </>
-          )}
-        </div>
-      </div>
+            <div className="h-full flex flex-col">
+              <div className="p-3 border-b border-white/10">
+                <h3 className="text-white font-semibold text-sm">History</h3>
+              </div>
+              <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                {conversations.map((conv) => (
+                  <motion.button
+                    key={conv.id}
+                    onClick={() => loadConversation(conv.id)}
+                    className={`w-full text-left p-2 rounded-lg transition-colors ${
+                      conv.id === currentConversationId
+                        ? 'bg-white/20 text-white'
+                        : 'text-white/70 hover:bg-white/10'
+                    }`}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="text-xs font-medium truncate">{conv.title}</div>
+                    <div className="text-xs text-white/40 flex items-center gap-1 mt-0.5">
+                      <Clock className="w-3 h-3" />
+                      {formatRelativeTime(conv.updatedAt)}
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0">
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
@@ -276,15 +393,16 @@ const ChatInterface = ({ isConfigured }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Chat Input */}
-      <ChatInput
-        onSendMessage={handleSendMessage}
-        isLoading={isLoading}
-        onStop={handleStopGeneration}
-        disabled={!isConfigured}
-      />
+        {/* Chat Input */}
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          isLoading={isLoading}
+          onStop={handleStopGeneration}
+          disabled={!isConfigured}
+        />
+      </div>
     </div>
   );
-};
+});
 
 export default ChatInterface;

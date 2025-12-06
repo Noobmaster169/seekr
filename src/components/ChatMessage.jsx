@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { User, Bot, Copy, Check } from 'lucide-react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import ItemCarouselMini from './ItemCarouselMini';
 
 const ChatMessage = ({ message, isTyping = false, onCopy }) => {
   const [copied, setCopied] = React.useState(false);
@@ -54,18 +55,19 @@ const ChatMessage = ({ message, isTyping = false, onCopy }) => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className={`flex gap-3 p-3 rounded-lg ${
-        isUser 
-          ? 'bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-400/30 ml-8' 
-          : 'bg-white/5 border border-white/10 mr-8'
-      }`}
-    >
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className={`flex gap-3 p-3 rounded-lg ${
+          isUser 
+            ? 'bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-400/30 max-w-[85%]' 
+            : 'bg-white/5 border border-white/10 max-w-[85%]'
+        }`}
+      >
       {/* Avatar */}
-      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+      {/*<div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
         isUser 
           ? 'bg-gradient-to-r from-purple-500 to-blue-500' 
           : 'bg-gradient-to-r from-emerald-500 to-teal-500'
@@ -75,7 +77,7 @@ const ChatMessage = ({ message, isTyping = false, onCopy }) => {
         ) : (
           <Bot className="w-4 h-4 text-white" />
         )}
-      </div>
+      </div>*/}
 
       {/* Content */}
       <div className="flex-1 min-w-0">
@@ -110,7 +112,19 @@ const ChatMessage = ({ message, isTyping = false, onCopy }) => {
               <span className="text-white/60 text-xs ml-2">AI is thinking...</span>
             </div>
           ) : (
-            renderContent()
+            <>
+              {renderContent()}
+              
+              {/* Render component if present */}
+              {message.component && message.component.type === 'product-carousel' && (
+                <div className="mt-3">
+                  <ItemCarouselMini 
+                    products={message.component.data.products}
+                    onSelectProduct={message.component.data.onSelectProduct}
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
         
@@ -120,7 +134,8 @@ const ChatMessage = ({ message, isTyping = false, onCopy }) => {
           </div>
         )}
       </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 };
 

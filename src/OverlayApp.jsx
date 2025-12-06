@@ -8,10 +8,14 @@ import {
   Settings,
   Bot,
   Eye,
-  EyeOff
+  EyeOff,
+  ShoppingBag,
+  Plus,
+  History
 } from 'lucide-react'
 import ChatInterface from './components/ChatInterface'
 import ChatSettings from './components/ChatSettings'
+import ShopDemo from './components/ShopDemo'
 
 function OverlayApp() {
   console.log('🎯 OverlayApp component rendering...')
@@ -22,6 +26,7 @@ function OverlayApp() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [activeTab, setActiveTab] = useState('chat')
   const [isConfigured, setIsConfigured] = useState(false)
+  const chatInterfaceRef = React.useRef(null)
 
   // Load saved visibility state from localStorage on mount
   useEffect(() => {
@@ -244,39 +249,99 @@ function OverlayApp() {
                 transition={{ duration: 0.3 }}
                 className="overflow-hidden"
               >
-                {/* Tabs */}
-                <div className="flex gap-2 p-3 bg-white/0 border-b border-white/10">
-                  {[
-                    { id: 'chat', icon: MessageSquare, label: 'Chat' },
-                    { id: 'settings', icon: Settings, label: 'Settings' }
-                  ].map((tab) => {
-                    const Icon = tab.icon
-                    return (
+                {/* Unified Header */}
+                <div className="flex items-center gap-3 px-3 py-2 bg-white/0 border-b border-white/10">
+                  {/* Left side tabs */}
+                  <div className="flex gap-2">
+                    {[
+                      { id: 'chat', icon: MessageSquare, label: 'Chat' },
+                      { id: 'shop', icon: ShoppingBag, label: 'Shop Demo' }
+                    ].map((tab) => {
+                      const Icon = tab.icon
+                      return (
+                        <motion.button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
+                            activeTab === tab.id
+                              ? 'bg-white/20 text-white'
+                              : 'text-white/60 hover:bg-white/10 hover:text-white/80'
+                          }`}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Icon className="w-4 h-4" />
+                          <span className="text-sm font-medium">{tab.label}</span>
+                          {tab.id === 'chat' && !isConfigured && (
+                            <div className="w-2 h-2 bg-red-400 rounded-full" title="Not configured" />
+                          )}
+                        </motion.button>
+                      )
+                    })}
+                  </div>
+                  
+                  {/* Chat actions - only show when Chat tab is active */}
+                  {activeTab === 'chat' && (
+                    <div className="flex items-center gap-1 ml-2">
                       <motion.button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
-                          activeTab === tab.id
-                            ? 'bg-white/20 text-white'
-                            : 'text-white/60 hover:bg-white/10 hover:text-white/80'
-                        }`}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        onClick={() => chatInterfaceRef.current?.createNewConversation()}
+                        className="p-1.5 rounded-lg hover:bg-green-500/20 transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        title="New chat"
                       >
-                        <Icon className="w-4 h-4" />
-                        <span className="text-sm font-medium">{tab.label}</span>
-                        {tab.id === 'chat' && !isConfigured && (
-                          <div className="w-2 h-2 bg-red-400 rounded-full" title="Not configured" />
-                        )}
+                        <Plus className="w-4 h-4 text-green-400" />
                       </motion.button>
-                    )
-                  })}
+                      
+                      <motion.button
+                        onClick={() => chatInterfaceRef.current?.showProductDemo()}
+                        className="p-1.5 rounded-lg hover:bg-purple-500/20 transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        title="Show products"
+                      >
+                        <ShoppingBag className="w-4 h-4 text-purple-400" />
+                      </motion.button>
+                      
+                      <motion.button
+                        onClick={() => chatInterfaceRef.current?.toggleHistory()}
+                        className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        title="Toggle history"
+                      >
+                        <History className="w-4 h-4 text-white/60" />
+                      </motion.button>
+                    </div>
+                  )}
+                  
+                  {/* Spacer */}
+                  <div className="flex-1"></div>
+                  
+                  {/* Settings on the right */}
+                  <motion.button
+                    onClick={() => setActiveTab('settings')}
+                    className={`p-2 rounded-lg transition-colors ${
+                      activeTab === 'settings'
+                        ? 'bg-white/20 text-white'
+                        : 'text-white/60 hover:bg-white/10 hover:text-white/80'
+                    }`}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Settings"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </motion.button>
                 </div>
 
                 {/* Tab Content */}
-                <div className={`${activeTab === 'chat' ? 'h-[500px] flex flex-col' : 'p-4 max-h-[400px] overflow-y-auto'}`}>
+                <div className={`${activeTab === 'chat' || activeTab === 'shop' ? 'h-[500px] flex flex-col' : 'p-4 max-h-[400px] overflow-y-auto'}`}>
                   {activeTab === 'chat' && (
-                    <ChatInterface isConfigured={isConfigured} />
+                    <ChatInterface ref={chatInterfaceRef} isConfigured={isConfigured} />
+                  )}
+
+                  {activeTab === 'shop' && (
+                    <ShopDemo />
                   )}
 
                   {activeTab === 'settings' && (

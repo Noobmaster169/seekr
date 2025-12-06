@@ -43,7 +43,7 @@ const ChatInput = ({ onSendMessage, isLoading, onStop, disabled = false }) => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={disabled ? "Configure API key in settings to start chatting..." : "Type your message... (Shift+Enter for new line)"}
+            placeholder={disabled ? "Configure API key in settings to start chatting..." : "Type your message..."}
             disabled={disabled || isLoading}
             className="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all min-h-[48px] max-h-[120px]"
             rows={1}
