@@ -4,14 +4,18 @@ import {
   X, 
   Minimize2,
   Maximize2,
-  Sparkles,
+  MessageSquare,
   Settings,
-  Info,
-  Zap,
+  Bot,
   Eye,
-  EyeOff
+  EyeOff,
+  ShoppingBag,
+  Plus,
+  History
 } from 'lucide-react'
-import GlassCard from './components/GlassCard'
+import ChatInterface from './components/ChatInterface'
+import ChatSettings from './components/ChatSettings'
+import ShopDemo from './components/ShopDemo'
 
 function OverlayApp() {
   console.log('🎯 OverlayApp component rendering...')
@@ -20,13 +24,26 @@ function OverlayApp() {
   const [position, setPosition] = useState({ x: 20, y: 20 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
-  const [activeTab, setActiveTab] = useState('info')
+  const [activeTab, setActiveTab] = useState('chat')
+  const [isConfigured, setIsConfigured] = useState(false)
+  const chatInterfaceRef = React.useRef(null)
 
   // Load saved visibility state from localStorage on mount
   useEffect(() => {
     const savedVisibility = localStorage.getItem('liquid-glass-visible')
     if (savedVisibility !== null) {
       setIsVisible(JSON.parse(savedVisibility))
+    }
+    
+    // Check if chat is configured
+    const savedConfig = localStorage.getItem('chat-config')
+    if (savedConfig) {
+      try {
+        const config = JSON.parse(savedConfig)
+        setIsConfigured(!!config.apiKey)
+      } catch (error) {
+        console.error('Error loading chat config:', error)
+      }
     }
   }, [])
 
@@ -146,7 +163,7 @@ function OverlayApp() {
             position: 'fixed',
             left: `${position.x}px`,
             top: `${position.y}px`,
-            width: isMinimized ? '320px' : '480px',
+            width: isMinimized ? '320px' : '520px',
             maxWidth: '90vw',
             maxHeight: '90vh',
             pointerEvents: 'auto',
@@ -178,8 +195,8 @@ function OverlayApp() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Sparkles style={{ width: '1.25rem', height: '1.25rem', color: 'rgb(196, 181, 253)' }} />
-                <span style={{ color: 'white', fontWeight: '600' }}>Liquid Glass</span>
+                <Bot style={{ width: '1.25rem', height: '1.25rem', color: 'rgb(196, 181, 253)' }} />
+                <span style={{ color: 'white', fontWeight: '600' }}>AI Chat Assistant</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <motion.button
@@ -232,127 +249,109 @@ function OverlayApp() {
                 transition={{ duration: 0.3 }}
                 className="overflow-hidden"
               >
-                {/* Tabs */}
-                <div className="flex gap-2 p-3 bg-white/0 border-b border-white/10">
-                  {[
-                    { id: 'info', icon: Info, label: 'Info' },
-                    { id: 'features', icon: Zap, label: 'Features' },
-                    { id: 'settings', icon: Settings, label: 'Settings' }
-                  ].map((tab) => {
-                    const Icon = tab.icon
-                    return (
+                {/* Unified Header */}
+                <div className="flex items-center gap-3 px-3 py-2 bg-white/0 border-b border-white/10">
+                  {/* Left side tabs */}
+                  <div className="flex gap-2">
+                    {[
+                      { id: 'chat', icon: MessageSquare, label: 'Chat' },
+                      { id: 'shop', icon: ShoppingBag, label: 'Shop Demo' }
+                    ].map((tab) => {
+                      const Icon = tab.icon
+                      return (
+                        <motion.button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
+                            activeTab === tab.id
+                              ? 'bg-white/20 text-white'
+                              : 'text-white/60 hover:bg-white/10 hover:text-white/80'
+                          }`}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Icon className="w-4 h-4" />
+                          <span className="text-sm font-medium">{tab.label}</span>
+                          {tab.id === 'chat' && !isConfigured && (
+                            <div className="w-2 h-2 bg-red-400 rounded-full" title="Not configured" />
+                          )}
+                        </motion.button>
+                      )
+                    })}
+                  </div>
+                  
+                  {/* Chat actions - only show when Chat tab is active */}
+                  {activeTab === 'chat' && (
+                    <div className="flex items-center gap-1 ml-2">
                       <motion.button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
-                          activeTab === tab.id
-                            ? 'bg-white/20 text-white'
-                            : 'text-white/60 hover:bg-white/10 hover:text-white/80'
-                        }`}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        onClick={() => chatInterfaceRef.current?.createNewConversation()}
+                        className="p-1.5 rounded-lg hover:bg-green-500/20 transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        title="New chat"
                       >
-                        <Icon className="w-4 h-4" />
-                        <span className="text-sm font-medium">{tab.label}</span>
+                        <Plus className="w-4 h-4 text-green-400" />
                       </motion.button>
-                    )
-                  })}
+                      
+                      <motion.button
+                        onClick={() => chatInterfaceRef.current?.showProductDemo()}
+                        className="p-1.5 rounded-lg hover:bg-purple-500/20 transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        title="Show products"
+                      >
+                        <ShoppingBag className="w-4 h-4 text-purple-400" />
+                      </motion.button>
+                      
+                      <motion.button
+                        onClick={() => chatInterfaceRef.current?.toggleHistory()}
+                        className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        title="Toggle history"
+                      >
+                        <History className="w-4 h-4 text-white/60" />
+                      </motion.button>
+                    </div>
+                  )}
+                  
+                  {/* Spacer */}
+                  <div className="flex-1"></div>
+                  
+                  {/* Settings on the right */}
+                  <motion.button
+                    onClick={() => setActiveTab('settings')}
+                    className={`p-2 rounded-lg transition-colors ${
+                      activeTab === 'settings'
+                        ? 'bg-white/20 text-white'
+                        : 'text-white/60 hover:bg-white/10 hover:text-white/80'
+                    }`}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Settings"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </motion.button>
                 </div>
 
                 {/* Tab Content */}
-                <div className="p-4 max-h-[400px] overflow-y-auto">
-                  {activeTab === 'info' && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="space-y-4"
-                    >
-                      <div>
-                        <h3 className="text-white font-bold text-lg mb-2">
-                          Welcome to Liquid Glass! 🌊
-                        </h3>
-                        <p className="text-white/70 text-sm leading-relaxed">
-                          This beautiful overlay demonstrates the power of glassmorphism design.
-                          It floats above any website with stunning visual effects.
-                        </p>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-3 border border-white/20">
-                        <p className="text-white/90 text-sm">
-                          <strong>Keyboard Shortcut:</strong> Press <kbd className="px-2 py-1 bg-white/15 rounded">Alt+L</kbd> to toggle visibility
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <div className="flex-1 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-lg p-3 border border-purple-400/30">
-                          <Sparkles className="w-5 h-5 text-purple-300 mb-1" />
-                          <p className="text-white/90 text-xs font-medium">Draggable</p>
-                        </div>
-                        <div className="flex-1 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg p-3 border border-blue-400/30">
-                          <Zap className="w-5 h-5 text-blue-300 mb-1" />
-                          <p className="text-white/90 text-xs font-medium">Animated</p>
-                        </div>
-                      </div>
-                    </motion.div>
+                <div className={`${activeTab === 'chat' || activeTab === 'shop' ? 'h-[500px] flex flex-col' : 'p-4 max-h-[400px] overflow-y-auto'}`}>
+                  {activeTab === 'chat' && (
+                    <ChatInterface ref={chatInterfaceRef} isConfigured={isConfigured} />
                   )}
 
-                  {activeTab === 'features' && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="space-y-3"
-                    >
-                      <h3 className="text-white font-bold text-lg mb-3">Features</h3>
-                      {[
-                        'Beautiful glassmorphism design',
-                        'Draggable and resizable',
-                        'Keyboard shortcuts',
-                        'Smooth animations',
-                        'Minimal performance impact',
-                        'Works on any website'
-                      ].map((feature, index) => (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className="flex items-center gap-3 text-white/80 text-sm"
-                        >
-                          <div className="w-1.5 h-1.5 bg-purple-400 rounded-full" />
-                          {feature}
-                        </motion.div>
-                      ))}
-                    </motion.div>
+                  {activeTab === 'shop' && (
+                    <ShopDemo />
                   )}
 
                   {activeTab === 'settings' && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="space-y-4"
-                    >
-                      <h3 className="text-white font-bold text-lg mb-3">How to Use</h3>
-                      
-                      <div className="space-y-3">
-                        <div className="bg-white/5 rounded-lg p-3 border border-white/20">
-                          <p className="text-white/90 text-sm font-medium mb-1">🖱️ Drag to Move</p>
-                          <p className="text-white/70 text-xs">Click and hold the header to drag this overlay anywhere</p>
-                        </div>
-
-                        <div className="bg-white/5 rounded-lg p-3 border border-white/20">
-                          <p className="text-white/90 text-sm font-medium mb-1">⌨️ Keyboard Shortcut</p>
-                          <p className="text-white/70 text-xs">Press <kbd className="px-2 py-0.5 bg-white/15 rounded text-xs">Alt+L</kbd> to toggle visibility</p>
-                        </div>
-
-                        <div className="bg-white/5 rounded-lg p-3 border border-white/20">
-                          <p className="text-white/90 text-sm font-medium mb-1">👁️ Hide/Show</p>
-                          <p className="text-white/70 text-xs">Click the eye icon in header to hide temporarily</p>
-                        </div>
-
-                        <div className="bg-white/5 rounded-lg p-3 border border-white/20">
-                          <p className="text-white/90 text-sm font-medium mb-1">📏 Minimize</p>
-                          <p className="text-white/70 text-xs">Use the minimize button to collapse the panel</p>
-                        </div>
-                      </div>
-                    </motion.div>
+                    <div className="p-4 max-h-[400px] overflow-y-auto">
+                      <ChatSettings 
+                        onConfigChange={(config) => {
+                          setIsConfigured(!!config.apiKey)
+                        }}
+                      />
+                    </div>
                   )}
                 </div>
               </motion.div>

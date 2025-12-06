@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seekr Message Passing Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .result {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Seekr Message Passing Test</h1>
+  <p>This page tests the message passing between overlay and content script.</p>
+  
+  <div class="test-section">
+    <h3>Test 1: Get API Key</h3>
+    <button onclick="testGetApiKey()">Test getApiKey</button>
+    <div id="result1" class="result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h3>Test 2: Set API Key</h3>
+    <input type="text" id="testApiKey" placeholder="Enter test API key" style="width: 300px; padding: 5px;">
+    <button onclick="testSetApiKey()">Test setApiKey</button>
+    <div id="result2" class="result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h3>Test 3: Extract Reel Data</h3>
+    <button onclick="testExtractReelData()">Test extractReelData</button>
+    <div id="result3" class="result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h3>Test 4: Capture Screenshot</h3>
+    <button onclick="testCaptureScreenshot()">Test captureScreenshot</button>
+    <div id="result4" class="result"></div>
+  </div>
+
+  <script>
+    // Simulate the overlay's sendMessageToBackground function
+    function sendMessageToBackground(action, data = {}) {
+      return new Promise((resolve, reject) => {
+        const messageId = Math.random().toString(36).substring(7)
+        
+        console.log('📤 Test sending request:', action, messageId, data)
+        
+        // Listen for response
+        const handleResponse = (event) => {
+          if (event.data && event.data.type === 'SEEKR_RESPONSE' && event.data.messageId === messageId) {
+            console.log('📥 Test received response:', event.data)
+            window.removeEventListener('message', handleResponse)
+            clearTimeout(timeoutId)
+            
+            if (event.data.error) {
+              reject(new Error(event.data.error))
+            } else {
+              resolve(event.data.response)
+            }
+          }
+        }
+        
+        window.addEventListener('message', handleResponse)
+        
+        // Send message to content script
+        window.postMessage({
+          type: 'SEEKR_REQUEST',
+          messageId,
+          action,
+          data
+        }, '*')
+        
+        // Timeout after 10 seconds
+        const timeoutId = setTimeout(() => {
+          window.removeEventListener('message', handleResponse)
+          console.error('⏱️ Test request timeout:', action, messageId)
+          reject(new Error('Request timeout'))
+        }, 10000)
+      })
+    }
+    
+    async function testGetApiKey() {
+      const resultDiv = document.getElementById('result1')
+      resultDiv.textContent = 'Testing...'
+      resultDiv.className = 'result'
+      
+      try {
+        const response = await sendMessageToBackground('getApiKey')
+        resultDiv.textContent = '✅ Success!\n' + JSON.stringify(response, null, 2)
+        resultDiv.className = 'result success'
+      } catch (error) {
+        resultDiv.textContent = '❌ Error: ' + error.message
+        resultDiv.className = 'result error'
+      }
+    }
+    
+    async function testSetApiKey() {
+      const resultDiv = document.getElementById('result2')
+      const apiKey = document.getElementById('testApiKey').value || 'test-key-123'
+      resultDiv.textContent = 'Testing with key: ' + apiKey + '...'
+      resultDiv.className = 'result'
+      
+      try {
+        const response = await sendMessageToBackground('setApiKey', { apiKey })
+        resultDiv.textContent = '✅ Success!\n' + JSON.stringify(response, null, 2)
+        resultDiv.className = 'result success'
+      } catch (error) {
+        resultDiv.textContent = '❌ Error: ' + error.message
+        resultDiv.className = 'result error'
+      }
+    }
+    
+    async function testExtractReelData() {
+      const resultDiv = document.getElementById('result3')
+      resultDiv.textContent = 'Testing...'
+      resultDiv.className = 'result'
+      
+      try {
+        const response = await sendMessageToBackground('extractReelData')
+        resultDiv.textContent = '✅ Success!\n' + JSON.stringify(response, null, 2)
+        resultDiv.className = 'result success'
+      } catch (error) {
+        resultDiv.textContent = '❌ Error: ' + error.message
+        resultDiv.className = 'result error'
+      }
+    }
+    
+    async function testCaptureScreenshot() {
+      const resultDiv = document.getElementById('result4')
+      resultDiv.textContent = 'Testing...'
+      resultDiv.className = 'result'
+      
+      try {
+        const response = await sendMessageToBackground('captureScreenshot')
+        if (response.success && response.imageBase64) {
+          resultDiv.textContent = '✅ Success! Screenshot captured (' + response.imageBase64.length + ' bytes)\n' + 
+            JSON.stringify({ success: response.success, size: response.imageBase64.length }, null, 2)
+        } else {
+          resultDiv.textContent = '⚠️ Response: ' + JSON.stringify(response, null, 2)
+        }
+        resultDiv.className = 'result success'
+      } catch (error) {
+        resultDiv.textContent = '❌ Error: ' + error.message
+        resultDiv.className = 'result error'
+      }
+    }
+    
+    // Log all messages for debugging
+    window.addEventListener('message', (event) => {
+      if (event.data && (event.data.type === 'SEEKR_REQUEST' || event.data.type === 'SEEKR_RESPONSE')) {
+        console.log('🔍 Test page saw message:', event.data)
+      }
+    })
+  </script>
+</body>
+</html>
+

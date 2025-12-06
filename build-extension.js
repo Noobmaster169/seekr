@@ -9,7 +9,26 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 async function buildExtension() {
-  console.log('🔨 Building Liquid Glass Browser Extension...\n')
+  console.log('🔨 Building Seekr Extension...\n')
+
+  const distDir = resolve(__dirname, 'dist')
+  
+  // Clear dist directory first to avoid caching issues
+  if (fs.existsSync(distDir)) {
+    console.log('🧹 Cleaning dist directory...')
+    const files = fs.readdirSync(distDir)
+    files.forEach(file => {
+      const filePath = path.join(distDir, file)
+      const stat = fs.statSync(filePath)
+      if (stat.isDirectory()) {
+        fs.rmSync(filePath, { recursive: true, force: true })
+      } else {
+        fs.unlinkSync(filePath)
+      }
+    })
+  } else {
+    fs.mkdirSync(distDir, { recursive: true })
+  }
 
   // Build the overlay
   console.log('📦 Building overlay bundle...')
@@ -31,7 +50,7 @@ async function buildExtension() {
         }
       },
       outDir: 'dist',
-      emptyOutDir: false,
+      emptyOutDir: true,
       minify: false
     }
   })
@@ -39,12 +58,12 @@ async function buildExtension() {
   // Copy public files
   console.log('📋 Copying extension files...')
   const publicDir = resolve(__dirname, 'public')
-  const distDir = resolve(__dirname, 'dist')
 
   const filesToCopy = [
     'manifest.json',
     'popup.html',
     'popup.js',
+    'background.js',
     'content.js',
     'content.css'
   ]
@@ -76,7 +95,7 @@ async function buildExtension() {
   console.log('  2. Enable "Developer mode"')
   console.log('  3. Click "Load unpacked"')
   console.log('  4. Select the "dist" folder')
-  console.log('\n💡 Press Alt+L on any website to toggle the overlay!')
+  console.log('\n🔑 Don\'t forget to configure your Claude API key in the extension popup!')
 }
 
 buildExtension().catch(console.error)

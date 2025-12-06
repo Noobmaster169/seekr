@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uniqlo Product Demo - Seekr</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .demo-container {
+            width: 100%;
+            max-width: 400px;
+            height: 600px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+        }
+
+        #root {
+            height: calc(100% - 70px);
+        }
+
+        .info-banner {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 12px;
+            margin: 15px;
+            border-radius: 10px;
+            color: rgba(191, 219, 254, 1);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+            margin: 0;
+        }
+
+        .footer a {
+            color: rgba(167, 139, 250, 1);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        @media (max-height: 700px) {
+            .demo-container {
+                height: 90vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="header">
+            <h1>🛍️ Uniqlo Product Demo</h1>
+            <p>Real-time scraping of Uniqlo Malaysia</p>
+        </div>
+        <div id="root"></div>
+    </div>
+
+    <div class="footer">
+        <p>Built with React + Vite | Product data from <a href="https://www.uniqlo.com/my/en/" target="_blank">Uniqlo MY</a></p>
+    </div>
+
+    <script type="module">
+        import React from 'react';
+        import ReactDOM from 'react-dom/client';
+        import UniqloDemo from './src/components/UniqloDemo.jsx';
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(
+            React.createElement(UniqloDemo)
+        );
+    </script>
+</body>
+</html>

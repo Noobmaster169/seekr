@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Liquid Glass Plugin</title>
+  <title>Seekr - Instagram Reel Product Detector</title>
   <style>
     * {
       margin: 0;
@@ -11,13 +11,13 @@
       box-sizing: border-box;
     }
 
-    /* body {
-      width: 320px;
-      min-height: 400px;
+    body {
+      width: 400px;
+      min-height: 500px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       padding: 20px;
-    } */
+    }
 
     .container {
       background: rgba(255, 255, 255, 0.1);
@@ -151,45 +151,214 @@
       font-size: 11px;
       color: rgba(255, 255, 255, 0.9);
     }
+
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    .input-label {
+      display: block;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .input-field::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .button.loading {
+      position: relative;
+      color: transparent;
+    }
+
+    .button.loading::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      top: 50%;
+      left: 50%;
+      margin-left: -8px;
+      margin-top: -8px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .results {
+      margin-top: 16px;
+      max-height: 300px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .results.show {
+      display: block;
+    }
+
+    .result-item {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .result-item h4 {
+      color: white;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .result-item p {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 12px;
+      margin: 2px 0;
+    }
+
+    .error {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: white;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    .settings-link {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 12px;
+      text-decoration: underline;
+      cursor: pointer;
+      margin-top: 8px;
+      display: block;
+    }
+
+    .settings-link:hover {
+      color: white;
+    }
+
+    .settings-section {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .settings-section.show {
+      display: block !important;
+    }
+
+    .api-key-status {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      margin-left: 8px;
+    }
+
+    .api-key-status.configured {
+      background: rgba(34, 197, 94, 0.2);
+      color: rgba(34, 197, 94, 1);
+    }
+
+    .api-key-status.not-configured {
+      background: rgba(239, 68, 68, 0.2);
+      color: rgba(239, 68, 68, 1);
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>
-      <span class="icon">🌊</span>
-      Liquid Glass
+      <span class="icon">🔍</span>
+      Seekr
     </h1>
-    <p class="subtitle">Beautiful glassmorphism overlay</p>
+    <p class="subtitle">Instagram Reel Product Detector</p>
 
-    <button id="toggleBtn" class="button">
-      <span>👁️</span>
-      Toggle Overlay
-    </button>
-
-    <button id="refreshBtn" class="button">
-      <span>🔄</span>
-      Refresh Overlay
-    </button>
-
-    <div class="features">
-      <div class="feature-badge">✨ Draggable</div>
-      <div class="feature-badge">⚡ Animated</div>
-      <div class="feature-badge">🎨 Beautiful</div>
-      <div class="feature-badge">📱 Responsive</div>
+    <div class="input-group">
+      <label class="input-label">Instagram Reel URL</label>
+      <input 
+        type="text" 
+        id="reelUrlInput" 
+        class="input-field" 
+        placeholder="https://www.instagram.com/reel/..."
+      />
     </div>
+
+    <button id="detectBtn" class="button">
+      <span>🔍</span>
+      Detect Products
+    </button>
+
+    <div id="errorMessage" class="error"></div>
+
+    <div id="results" class="results"></div>
 
     <div class="status">
       <span class="status-indicator"></span>
-      <span id="statusText">Extension active</span>
+      <span id="statusText">Ready</span>
+      <span id="apiKeyStatus" class="api-key-status not-configured">No API Key</span>
     </div>
 
-    <div class="shortcuts">
-      <h3>Keyboard Shortcuts</h3>
-      <div class="shortcut-item">
-        <span>Toggle overlay</span>
-        <kbd>Alt + L</kbd>
+    <div class="settings-section" id="settingsSection" style="display: none;">
+      <div class="input-group">
+        <label class="input-label">Claude API Key</label>
+        <input 
+          type="password" 
+          id="apiKeyInput" 
+          class="input-field" 
+          placeholder="sk-ant-api03-..."
+        />
+        <p style="color: rgba(255, 255, 255, 0.6); font-size: 11px; margin-top: 4px;">
+          Get your key from <a href="https://console.anthropic.com/" target="_blank" style="color: rgba(255, 255, 255, 0.8);">Anthropic Console</a>
+        </p>
       </div>
+      <button id="saveApiKeyBtn" class="button" style="margin-top: 8px;">
+        <span>💾</span>
+        Save API Key
+      </button>
+      <button id="cancelSettingsBtn" class="button" style="background: rgba(239, 68, 68, 0.2); margin-top: 8px;">
+        <span>✕</span>
+        Cancel
+      </button>
     </div>
+
+    <a href="#" id="settingsLink" class="settings-link">Configure Claude API Key</a>
   </div>
 
   <script src="popup.js"></script>

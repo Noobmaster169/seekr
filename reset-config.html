@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset AI Chat Configuration</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: scale(1.05);
+        }
+        
+        .success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .info {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Reset AI Chat Configuration</h1>
+        
+        <div class="info">
+            <h3>📋 Current Configuration</h3>
+            <div id="currentConfig">Loading...</div>
+        </div>
+        
+        <h3>🚀 Actions</h3>
+        
+        <button onclick="resetToAnthropic()">
+            🤖 Reset to Anthropic Default
+        </button>
+        
+        <button onclick="clearAllConfig()">
+            🗑️ Clear All Configuration
+        </button>
+        
+        <button onclick="showCurrentConfig()">
+            🔍 Refresh Current Config
+        </button>
+        
+        <div id="result"></div>
+        
+        <div class="info">
+            <h3>📝 Instructions</h3>
+            <ol>
+                <li>Use <strong>"Reset to Anthropic Default"</strong> to force Anthropic as the default provider</li>
+                <li>Use <strong>"Clear All Configuration"</strong> to completely reset all settings</li>
+                <li>After resetting, reload your browser extension</li>
+                <li>Press <code>Alt+L</code> to open the chat and verify the settings</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function showCurrentConfig() {
+            const config = localStorage.getItem('chat-config');
+            const configDiv = document.getElementById('currentConfig');
+            
+            if (config) {
+                try {
+                    const parsed = JSON.parse(config);
+                    configDiv.innerHTML = `
+                        <strong>Provider:</strong> ${parsed.provider || 'Not set'}<br>
+                        <strong>Model:</strong> ${parsed.model || 'Not set'}<br>
+                        <strong>Base URL:</strong> ${parsed.baseURL || 'Not set'}<br>
+                        <strong>API Key:</strong> ${parsed.apiKey ? '***' + parsed.apiKey.slice(-4) : 'Not set'}
+                    `;
+                } catch (error) {
+                    configDiv.innerHTML = '<span style="color: #ef4444;">Invalid configuration data</span>';
+                }
+            } else {
+                configDiv.innerHTML = '<span style="color: #6b7280;">No configuration found</span>';
+            }
+        }
+        
+        function resetToAnthropic() {
+            const anthropicConfig = {
+                apiKey: '',
+                provider: 'anthropic',
+                model: 'claude-3-5-sonnet-20241022',
+                baseURL: 'https://api.anthropic.com/v1'
+            };
+            
+            localStorage.setItem('chat-config', JSON.stringify(anthropicConfig));
+            
+            document.getElementById('result').innerHTML = `
+                <div class="success">
+                    ✅ <strong>Configuration reset to Anthropic default!</strong><br>
+                    Provider: anthropic<br>
+                    Model: claude-3-5-sonnet-20241022<br>
+                    <br>
+                    <em>Now reload your browser extension and press Alt+L to configure your API key.</em>
+                </div>
+            `;
+            
+            showCurrentConfig();
+        }
+        
+        function clearAllConfig() {
+            localStorage.removeItem('chat-config');
+            localStorage.removeItem('chat-messages');
+            localStorage.removeItem('liquid-glass-visible');
+            
+            document.getElementById('result').innerHTML = `
+                <div class="success">
+                    ✅ <strong>All configuration cleared!</strong><br>
+                    - Chat configuration removed<br>
+                    - Message history cleared<br>
+                    - Visibility state reset<br>
+                    <br>
+                    <em>Extension will use Anthropic defaults on next load.</em>
+                </div>
+            `;
+            
+            showCurrentConfig();
+        }
+        
+        // Load current config on page load
+        showCurrentConfig();
+    </script>
+</body>
+</html>
