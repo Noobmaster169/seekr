@@ -1,6 +1,6 @@
 // Configuration
 export const config = {
-    productUrl: "https://www.uniqlo.com/my/en/products/E474244-000?colorCode=COL69&sizeCode=SMA006",
+    productUrl: "https://www.uniqlo.com/my/en/products/E453754-000?",
     size: "M",      // e.g., "S", "M", "L", "XL", "32", "34", etc.
     color: "0",     // e.g., "Black", "White", "Blue", etc.
     email: "yash.mahmud@gmail.com",
@@ -11,15 +11,55 @@ export const config = {
   export function randomDelay(min = 500, max = 1500) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
+
+  // Helper function to check if error is due to heavy traffic
+  function isHeavyTrafficError(error) {
+    const errorMessage = error.message || error.toString();
+    const heavyTrafficIndicators = [
+      'timeout',
+      'Navigation timeout',
+      'net::ERR',
+      '503',
+      '429',
+      'Service Unavailable',
+      'Too Many Requests',
+      'rate limit',
+      'server error',
+      'connection',
+      'heavy traffic',
+    ];
+    
+    return heavyTrafficIndicators.some(indicator => 
+      errorMessage.toLowerCase().includes(indicator.toLowerCase())
+    );
+  }
+
+  // Helper function to throw heavy traffic error
+  function throwHeavyTrafficError() {
+    throw new Error('⚠️ Website is experiencing heavy traffic. Please try again later. The site may be slow or temporarily unavailable.');
+  }
   
   // ============================================
   // CHECKOUT FUNCTION
   // ============================================
   export async function performCheckout(page, options = {}) {
     const { productUrl, size, color, email, password } = { ...config, ...options };
-  
-    // Navigate to product page
-    await page.goto(productUrl);
+
+    try {
+      // Navigate to product page
+      await page.goto(productUrl, { 
+        waitUntil: 'domcontentloaded',
+        timeout: 60000 
+      });
+    } catch (error) {
+      // Check for heavy traffic indicators
+      if (isHeavyTrafficError(error)) {
+        throwHeavyTrafficError();
+      }
+      throw error;
+    }
+    
+    try {
   
     // Select color if specified
     if (color && color !== "0") {
@@ -130,27 +170,20 @@ export const config = {
       await page.getByLabel('City').fill('Subang Jaya');
       
       // Select the state from the dropdown
-      const stateField = page.getByLabel('State');
-      await stateField.click();
+      await page.getByLabel('State Please select a state.').selectOption('Selangor');
       await page.waitForTimeout(randomDelay(300, 600)); // Wait for dropdown to open
-      
-      // Try multiple ways to select the state
-      const stateOption = page.getByRole('option', { name: /Selangor/i }).first();
-      if (await stateOption.isVisible().catch(() => false)) {
-        await stateOption.click();
-      } else {
-        // Fallback: try using select element directly
-        await page.selectOption('select[aria-label*="State" i], select[name*="state" i]', { label: /Selangor/i }).catch(() => {});
-      }
+
       
       await page.waitForTimeout(randomDelay(3200, 3400));
-      await page.getByLabel('Zip Code/Postal Code').fill('47500');
-      await page.getByLabel('Country').fill('Malaysia');
-      await page.getByLabel('Phone').fill('143472169');
 
-      // Click on "Continue to Payment"
-      await page.getByRole('button', { name: /register/i }).waitFor({ state: 'visible' });
-      await page.getByRole('button', { name: /register/i }).click();
+      await page.getByRole('textbox', { name: 'Postal code' }).click();
+      await page.getByRole('textbox', { name: 'Postal code' }).fill('47500');
+      await page.getByRole('textbox', { name: 'Phone', exact: true }).click();
+      await page.getByRole('textbox', { name: 'Phone', exact: true }).fill('143472169');
+      await page.getByRole('textbox', { name: 'Mobile phone' }).click();
+      await page.getByRole('textbox', { name: 'Mobile phone' }).fill('143472169');
+      await page.locator('[data-test="register-button"]').click();
+
     }
 
     await page.getByRole('button', { name: /continue to payment/i }).waitFor({ state: 'visible' });
@@ -170,10 +203,44 @@ export const config = {
     await page.waitForTimeout(randomDelay(1000, 2500));
 
     // Click on "Continue to Payment"
-    await page.getByRole('button', { name: /continue to payment/i }).waitFor({ state: 'visible' });
-    await page.getByRole('button', { name: /continue to payment/i }).click();
+    await page.locator('[data-test="continue-to-payment-button"]').click();
+    await page.locator('[data-test="continue-to-payment-button"]').click();
 
     await page.waitForTimeout(randomDelay(1000, 2500));
+
+    await page.locator('[data-test="continue-to-payment-button"]').click();
+
+    await page.waitForTimeout(randomDelay(1000, 2500));
+
+    await page.locator('[data-test="credit-card-type"]').click();
+    await page.locator('label').filter({ hasText: 'Online Banking' }).click();
+    await page.getByLabel('Bank name Please selectAffin').selectOption('fpx_mb2u');
+
+    await page.waitForTimeout(randomDelay(1000, 2500));
+
+    await page.locator('[data-test="continue-button"]').click();
+    await page.waitForTimeout(randomDelay(1000, 2500));
+    await page.locator('[data-test="place-order-button"]').click();
+    await page.waitForTimeout(randomDelay(1000, 2500));
+    await page.getByRole('textbox').click();
+    await page.getByRole('textbox').fill('MaybankUsername');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('textbox').fill('MaybankPassword');
+    await page.getByRole('textbox').press('Enter');
+    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('combobox').selectOption('MaybankAccountNumber');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByRole('button', { name: 'Confirm' }).click();
+    await page.getByRole('button', { name: 'I\'ve approved/rejected my' }).click();
+    
+    } catch (error) {
+      // Check for heavy traffic indicators throughout the checkout process
+      if (isHeavyTrafficError(error)) {
+        throwHeavyTrafficError();
+      }
+      // Re-throw other errors as-is
+      throw error;
+    }
   }
 
   // Common cookie accept button selectors for different sites
